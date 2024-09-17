@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import VideoPlayer from './VideoPlayer';
 import Modal from './Modal';
 import { FaFilePdf } from 'react-icons/fa';
 import styles from './CourseDetails.module.css';
-
 
 const CourseDetails = () => {
     const { id } = useParams();
@@ -22,9 +21,10 @@ const CourseDetails = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [feedbackData, setFeedbackData] = useState([]);
     const [currentGrade, setCurrentGrade] = useState(null);
+    const [submittedQuizzes, setSubmittedQuizzes] = useState({});
+    const [hasSubmitted, setHasSubmitted] = useState(false);
 
     const userId = JSON.parse(localStorage.getItem('educationalPlatform')).id;
-
 
     useEffect(() => {
         axios.get(`http://localhost:8080/api/courses/${id}`)
@@ -34,9 +34,7 @@ const CourseDetails = () => {
                     setSelectedVideo(response.data.videos[0]);
                 }
             })
-            .catch(error => {
-                console.error("Error fetching course details:", error);
-            });
+            .catch(error => console.error("Error fetching course details:", error));
     }, [id]);
 
     useEffect(() => {
@@ -67,7 +65,7 @@ const CourseDetails = () => {
                 setCurrentGrade(response.data.value);
             })
             .catch(error => console.error("Error fetching updated grade:", error));
-    }, [userId, selectedQuizId])
+    }, [userId, selectedQuizId]);
 
     const handleVideoClick = (video) => {
         setSelectedVideo(video);
@@ -88,6 +86,7 @@ const CourseDetails = () => {
     const handleQuizSelect = (quizId) => {
         setSelectedQuizId(quizId);
         setIsModalOpen(true);
+        setHasSubmitted(false);
     };
 
     const handleAnswerChange = (qcmId, value) => {
@@ -109,7 +108,7 @@ const CourseDetails = () => {
                     const qcmId = Object.keys(answers)[index];
                     const isCorrect = response.data.correct;
                     feedback.push({
-                        qcmId,
+                        qcmId: Number(qcmId),
                         message: response.data.message,
                         isCorrect
                     });
@@ -118,10 +117,7 @@ const CourseDetails = () => {
                         correctAnswers.push(qcmId);
                     }
                 });
-                console.log("***************************************************")
-                console.log(`Correct answer count is : ${correctAnswers.length}`)
-                console.log(feedback)
-                console.log("***************************************************")
+
                 axios.patch(`http://localhost:8080/api/grades/${userId}`, {
                     studentId: userId,
                     quizId: selectedQuizId,
@@ -131,8 +127,10 @@ const CourseDetails = () => {
                         axios.get(`http://localhost:8080/api/grades/student/${userId}/quiz/${selectedQuizId}`)
                             .then(response => {
                                 setCurrentGrade(response.data.value);
+                                setSubmittedQuizzes(prev => ({ ...prev, [selectedQuizId]: true })); // Update submission state
                                 setFeedbackData(feedback);
                                 setIsModalOpen(true);
+                                setHasSubmitted(true);
                             })
                             .catch(error => console.error("Error fetching updated grade:", error));
                     })
@@ -142,8 +140,8 @@ const CourseDetails = () => {
     };
 
     const closeModal = () => {
-        setFeedbackData([])
-        setAnswers({})
+        setFeedbackData([]);
+        setAnswers({});
         setIsModalOpen(false);
     };
 
@@ -191,7 +189,7 @@ const CourseDetails = () => {
                             <div className={styles.tabContent}>
                                 {activeTab === 'details' && (
                                     <div>
-                                        <h2>Course Details</h2>
+                                        <h2 style={{"textAlign": "center", "textDecoration": "underline"}}>Course Details</h2>
                                         <p><strong>Teacher:</strong> {course.teacher.username}</p>
                                         <p><strong>Title:</strong> {course.title}</p>
                                         <p><strong>Description:</strong> {course.description}</p>
@@ -204,6 +202,7 @@ const CourseDetails = () => {
                                             <FaFilePdf className={styles.pdfIcon} />
                                             {course.pdfName}
                                         </a>
+
                                     </div>
                                 )}
                                 {activeTab === 'assignments' && (
@@ -218,18 +217,26 @@ const CourseDetails = () => {
                                 )}
                                 {activeTab === 'quizzes' && (
                                     <div>
-                                        <h2>Quizzes</h2>
+                                        <h2 style={{"textAlign": "center", "textDecoration": "underline"}}>Quizzes</h2>
                                         <ul>
                                             {quizzes.map(quiz => (
-                                                <li key={quiz.id}>
-                                                    <button onClick={() => handleQuizSelect(quiz.id)}>
+                                                <li key={quiz.id} className={styles.quizItem}>
+                                                    <button
+                                                        onClick={() => handleQuizSelect(quiz.id)}
+                                                        disabled={!!submittedQuizzes[quiz.id]} // Disable if quiz is submitted
+                                                        className={`${styles.quizButton} ${submittedQuizzes[quiz.id] ? styles.disabledQuizButton : ''}`} // Add class for styling
+                                                    >
                                                         {quiz.title}
                                                     </button>
+                                                    {submittedQuizzes[quiz.id] && (  // Conditionally render text for submitted quizzes
+                                                        <span className={styles.quizStatus}> (Already submitted)</span>
+                                                    )}
                                                 </li>
                                             ))}
                                         </ul>
                                     </div>
                                 )}
+
                             </div>
                         </>
                     )}
@@ -241,70 +248,34 @@ const CourseDetails = () => {
                         Hide Course Content
                     </button>
                     <div>
-                        <h3 className={styles.videoListHeader}>Course Content</h3>
-                        <ul className={styles.videoList}>
-                            {course.videos && course.videos.length > 0 ? (
-                                course.videos.map(video => (
-                                    <li
-                                        key={video.id}
-                                        className={`${styles.videoItem} ${selectedVideo?.id === video.id ? styles.selected : ''}`}
-                                        onClick={() => handleVideoClick(video)}
-                                    >
-                                        {video.title}
-                                    </li>
-                                ))
-                            ) : (
-                                <div>No videos available for this course.</div>
-                            )}
+                        <h3 className={styles.videoListTitle} style={{"textAlign": "center", "textDecoration": "underline"}}>Course Content</h3>
+                        <ul>
+                            {course.videos.map(video => (
+                                <li
+                                    key={video.id}
+                                    onClick={() => handleVideoClick(video)}
+                                    className={`${styles.videoItem} ${selectedVideo && selectedVideo.id === video.id ? styles.videoItemSelected : ''}`}
+                                >
+                                    {video.title}
+                                </li>
+
+                            ))}
                         </ul>
                     </div>
                 </div>
             )}
-
             <Modal
                 isOpen={isModalOpen}
                 onClose={closeModal}
-                title={`Question for: ${(quizzes.filter(quiz => quiz.id === selectedQuizId)[0] === undefined ?
-                    selectedQuizId : quizzes.filter(quiz => quiz.id === selectedQuizId)[0].title)}`}
-            >
-                <ul className={styles.questions}>
-                    {qcms.map(qcm => (
-                        <li key={qcm.id}>
-                            <p>{qcm.question}</p>
-                            <input
-                                required={true}
-                                type="text"
-                                onChange={(e) => handleAnswerChange(qcm.id, e.target.value)}
-                            />
-                        </li>
-                    ))}
-                </ul>
-                <div>
-                    <h4>Your Current Grade: {currentGrade}</h4>
-                </div>
-                <ul>
-                    {feedbackData.map(feedback => (
-                        <li key={feedback.qcmId}>
-                            <p>
-                                {feedback.isCorrect ? (
-                                    <span style={{ color: 'green' }}>Correct</span>
-                                ) : (
-                                    <span style={{ color: 'red' }}>Incorrect</span>
-                                )}
-                            </p>
-                            { }
-                        </li>
-                    ))}
-                </ul>
-                <button
-                    onClick={handleSubmitAnswers}
-                    disabled={feedbackData.length > 0}
-                    className={feedbackData.length <= 0 ? (styles.submitButton) : (styles.submitButtonDisabled)}
-                >
-                    Submit Answers
-                </button>
-            </Modal>
-
+                title={`${quizzes.find(quiz => quiz.id === selectedQuizId)?.title || selectedQuizId}`}
+                qcms={qcms}
+                feedbackData={feedbackData}
+                answers={answers}
+                handleAnswerChange={handleAnswerChange}
+                handleSubmitAnswers={handleSubmitAnswers}
+                currentGrade={currentGrade}
+                hasSubmitted={hasSubmitted}
+            />
         </div>
     );
 };

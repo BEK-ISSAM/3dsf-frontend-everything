@@ -20,7 +20,7 @@ import cat5 from "../fake_data/categories/category-5.png";
 import {useAuth} from "../hooks/AuthProvider";
 const ComplexSearch = () => {
 
-    const [courses, setCourses] = useState(coursesData);
+    const [courses, setCourses] = useState([]);
     const images = [img1, img2, img3, img4, img5];
     const category_images = [[cat2, "Design"], [cat3,"Development"], [cat4,"machine learning and statistics"], [cat5,"Self Improvements"]];
     const [open, setOpen] = useState(false);
@@ -31,6 +31,18 @@ const ComplexSearch = () => {
     const [focus, setFocus] = useState(false);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [numElements, setNumElements] = useState(1);
+
+    const fetchCourses = async () => {
+        try {
+          const response = await fetch('http://localhost:8080/api/courses');
+          const data = await response.json();
+          console.log(data)
+          setCourses(data);
+        } catch (error) {
+          console.error('Error fetching courses', error);
+          console.log(`Complex search Courses: ${courses} `)
+        }
+      };
 
     const auth = useAuth();
 
@@ -68,10 +80,11 @@ const ComplexSearch = () => {
 
 
     useEffect(() => {
+        fetchCourses();
         handleLoadingCategories();
         setNumElements(getSlidesPerView());
 
-    }, []);
+    }, [search, categories]);
 
     const getXgivenId = (id) => {
         return document.getElementById(id).getBoundingClientRect().left;
@@ -311,15 +324,16 @@ const ComplexSearch = () => {
                 >
                     {courses.map((course, index) => {
                         console.log(index);
+                        const imageUrl = `data:image/png;base64,${course.thumbnail}`;
 
                         return (
                                 <Card
                                     className="max-w-sm mx-2 my-6"
                                     key={index}
-                                    imgAlt="Apple Watch Series 7 in colors pink, silver, and black"
-                                    imgSrc={images[index]}
+                                    imgAlt={course.title}
+                                    imgSrc={imageUrl}
                                 >
-                                    <Link to={`/courses/${course.title}`}>
+                                    <Link to={`/course/${course.id}`}>
                                         <h5 className="text-sm font-semibold tracking-tight text-gray-900 dark:text-white my-0 underline hover:no-underline">
                                             {course.title}
                                         </h5>

@@ -20,7 +20,7 @@ const ResetPassword = () => {
 
   const onSubmit = (values, { resetForm }) => {
     // Make a POST request to the backend API
-    axios.post('http://localhost:8081/api/auth/forgot-password', null, {
+    axios.post('http://localhost:8080/api/auth/forgot-password', null, {
       params: { email: values.email }
     })
     .then(response => {

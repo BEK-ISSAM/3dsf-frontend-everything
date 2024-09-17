@@ -74,10 +74,10 @@ const Testimonial = () => {
                 <img className="w-12 h-12 rounded-full" src={av2} alt="user avatar" width="400" height="400" loading="lazy" />
                   <div>
                     <h6 className="text-lg font-medium text-gray-700 dark:text-white">Yanndy Doe</h6>
-                    <p class="text-sm text-gray-500 dark:text-gray-300">Mobile dev</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-300">Mobile dev</p>
                   </div>
               </div>
-              <p class="mt-8">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Architecto laboriosam deleniti aperiam ab veniam sint non cumque quis tempore cupiditate. Sint libero voluptas veniam at reprehenderit, veritatis harum et rerum.</p>
+              <p className="mt-8">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Architecto laboriosam deleniti aperiam ab veniam sint non cumque quis tempore cupiditate. Sint libero voluptas veniam at reprehenderit, veritatis harum et rerum.</p>
             </div>
 
           </div>

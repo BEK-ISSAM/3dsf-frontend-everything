@@ -13,7 +13,7 @@ const Categories = ({ onClose }) => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get('http://localhost:8081/api/categories');
+        const response = await axios.get('http://localhost:8080/api/categories');
         setCategories(response.data);
         setLoading(false);
       } catch (error) {
