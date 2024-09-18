@@ -5,6 +5,7 @@ import VideoPlayer from './VideoPlayer';
 import Modal from './Modal';
 import { FaFilePdf } from 'react-icons/fa';
 import styles from './CourseDetails.module.css';
+import CourseNavbar from './CourseNavbar';
 
 const CourseDetails = () => {
     const { id } = useParams();
@@ -27,7 +28,7 @@ const CourseDetails = () => {
     const userId = JSON.parse(localStorage.getItem('educationalPlatform')).id;
 
     useEffect(() => {
-        axios.get(`http://localhost:8080/api/courses/${id}`)
+        axios.get(`http://localhost:8081/api/courses/${id}`)
             .then(response => {
                 setCourse(response.data);
                 if (response.data.videos.length > 0) {
@@ -45,7 +46,7 @@ const CourseDetails = () => {
 
     useEffect(() => {
         if (course) {
-            axios.get(`http://localhost:8080/api/quizzes`)
+            axios.get(`http://localhost:8081/api/quizzes`)
                 .then(response => setQuizzes(response.data))
                 .catch(error => console.error("Error fetching quizzes:", error));
         }
@@ -53,14 +54,14 @@ const CourseDetails = () => {
 
     useEffect(() => {
         if (selectedQuizId !== null) {
-            axios.get(`http://localhost:8080/api/qcm/quiz/${selectedQuizId}`)
+            axios.get(`http://localhost:8081/api/qcm/quiz/${selectedQuizId}`)
                 .then(response => setQcms(response.data))
                 .catch(error => console.error("Error fetching QCMs:", error));
         }
     }, [selectedQuizId]);
 
     useEffect(() => {
-        axios.get(`http://localhost:8080/api/grades/student/${userId}/quiz/${selectedQuizId}`)
+        axios.get(`http://localhost:8081/api/grades/student/${userId}/quiz/${selectedQuizId}`)
             .then(response => {
                 setCurrentGrade(response.data.value);
             })
@@ -101,7 +102,7 @@ const CourseDetails = () => {
         const correctAnswers = [];
 
         Promise.all(Object.keys(answers).map(qcmId =>
-            axios.post(`http://localhost:8080/api/qcm/check/${qcmId}`, { answer: answers[qcmId], studentId: userId })
+            axios.post(`http://localhost:8081/api/qcm/check/${qcmId}`, { answer: answers[qcmId], studentId: userId })
         ))
             .then(responses => {
                 responses.forEach((response, index) => {
@@ -118,13 +119,13 @@ const CourseDetails = () => {
                     }
                 });
 
-                axios.patch(`http://localhost:8080/api/grades/${userId}`, {
+                axios.patch(`http://localhost:8081/api/grades/${userId}`, {
                     studentId: userId,
                     quizId: selectedQuizId,
                     value: correctAnswers.length
                 })
                     .then(() => {
-                        axios.get(`http://localhost:8080/api/grades/student/${userId}/quiz/${selectedQuizId}`)
+                        axios.get(`http://localhost:8081/api/grades/student/${userId}/quiz/${selectedQuizId}`)
                             .then(response => {
                                 setCurrentGrade(response.data.value);
                                 setSubmittedQuizzes(prev => ({ ...prev, [selectedQuizId]: true })); // Update submission state
@@ -148,12 +149,14 @@ const CourseDetails = () => {
     if (!course) return <div>Loading...</div>;
 
     return (
+        <>
+        <CourseNavbar />
         <div className={styles.courseDetails}>
             <div className={styles.mainContent}>
                 <div className={`${styles.videoPlayerContainer} ${!isVideoListVisible ? styles.fullWidth : ''}`}>
                     {selectedVideo && (
                         <VideoPlayer
-                            videoSrc={`http://localhost:8080/api/videos/stream?fileName=${encodeURIComponent(selectedVideo.filePath)}`}
+                            videoSrc={`http://localhost:8081/api/videos/stream?fileName=${encodeURIComponent(selectedVideo.filePath)}`}
                         />
                     )}
                 </div>
@@ -195,7 +198,7 @@ const CourseDetails = () => {
                                         <p><strong>Description:</strong> {course.description}</p>
                                         <p><strong>Category:</strong> {course.category?.name}</p>
                                         <a
-                                            href={`http://localhost:8080/api/courses/${course.id}/download-pdf`}
+                                            href={`http://localhost:8081/api/courses/${course.id}/download-pdf`}
                                             download
                                             className={styles.downloadLink}
                                         >
@@ -277,6 +280,7 @@ const CourseDetails = () => {
                 hasSubmitted={hasSubmitted}
             />
         </div>
+        </>
     );
 };
 

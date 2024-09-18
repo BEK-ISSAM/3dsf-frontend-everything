@@ -60,7 +60,7 @@ const ManageTeachers = () => {
                         </div>
                         <div className={"space-y-6"}>
                             <Label htmlFor="description" value="Repeat password"/>
-                            <TextInput type="required-password" id="required-password" placeholder="*****" required/>
+                            <TextInput type="password" id="required-password" placeholder="*****" required/>
                         </div>
 
 
@@ -99,7 +99,7 @@ const ManageTeachers = () => {
 
                                 AdminRequests.createUser(user).then(
                                     (response) => {
-                                        setResponseMessage("category created successfully");
+                                        setResponseMessage("Teacher created successfully");
                                         console.log(response)
                                         setAlertCreated("success");
                                     }).catch((error) => {
